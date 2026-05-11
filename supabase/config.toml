@@ -1,0 +1,19 @@
+project_id = "ndzmxkwmxhfbxzhuxemi"
+
+[api]
+port = 54321
+
+[db]
+port = 54322
+
+[studio]
+port = 54323
+
+[functions.invite-user]
+verify_jwt = true
+
+[functions.create-script]
+verify_jwt = true
+
+[functions.ask-victor]
+verify_jwt = true
