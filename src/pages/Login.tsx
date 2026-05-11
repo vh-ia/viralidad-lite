@@ -22,31 +22,26 @@ export function Login() {
 
   // Handle invitation/password recovery callback
   useEffect(() => {
+    // Hash-based flow (legacy Supabase)
     const hashParams = new URLSearchParams(window.location.hash.replace('#', '?'))
     const accessToken = hashParams.get('access_token')
     const type = hashParams.get('type')
 
     if (accessToken && (type === 'invite' || type === 'recovery')) {
-      // Exchange the tokens
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session) {
-          // User is already authenticated via the magic link
-          if (type === 'invite') {
-            setIsSettingPassword(true)
-          } else {
-            navigate('/dashboard')
-          }
+          setIsSettingPassword(true)
         }
       })
     }
 
-    // Also handle PKCE flow via URL params
+    // PKCE code flow — invite links always require setting a password first
     const urlParams = new URLSearchParams(window.location.search)
     const code = urlParams.get('code')
     if (code) {
-      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-        if (!error) {
-          navigate('/dashboard')
+      supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
+        if (!error && data.session) {
+          setIsSettingPassword(true)
         }
       })
     }
