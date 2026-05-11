@@ -52,7 +52,14 @@ export function Admin() {
         headers: { Authorization: `Bearer ${session.access_token}` },
       })
 
-      if (response.error) throw response.error
+      if (response.error) {
+        let detail = response.error.message
+        try {
+          const body = await (response.error as any).context?.json?.()
+          if (body?.error) detail = body.error
+        } catch {}
+        throw new Error(detail)
+      }
 
       toast({ title: 'Invitación enviada', description: `Se envió el link de acceso a ${inviteEmail}` })
       setInviteEmail('')
