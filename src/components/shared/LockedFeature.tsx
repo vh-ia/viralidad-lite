@@ -48,10 +48,10 @@ export function LockedFeature({ title, description, icon }: LockedFeatureProps) 
             <Button
               size="lg"
               className="gap-2 bg-primary hover:bg-primary/90 text-white font-semibold px-8"
-              onClick={() => window.open('https://viralidad.ai', '_blank')}
+              onClick={() => window.open('https://viralidad.com', '_blank')}
             >
               <ExternalLink className="w-4 h-4" />
-              Desbloquear en viralidad.ai
+              Desbloquear en viralidad.com
             </Button>
             <p className="text-xs text-muted-foreground">
               Accede a todas las herramientas con la versión completa
