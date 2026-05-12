@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     }
 
     // Check limit
-    if (profile.role !== 'admin' && profile.queries_used >= 10) {
+    if (profile.role !== 'admin' && profile.queries_used >= 5) {
       return new Response(
         JSON.stringify({
           error: 'Límite de consultas alcanzado. Actualiza tu plan en viralidad.ai',

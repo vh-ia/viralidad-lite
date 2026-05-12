@@ -87,7 +87,7 @@ export function AskVictor() {
 
   const isAdmin = profile?.role === 'admin'
   const queriesUsed = profile?.queries_used ?? 0
-  const atLimit = !isAdmin && queriesUsed >= 10
+  const atLimit = !isAdmin && queriesUsed >= 5
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -167,7 +167,7 @@ export function AskVictor() {
         </p>
         {!isAdmin && (
           <div className="mt-3">
-            <UsageBadge used={queriesUsed} total={10} label="Consultas usadas este mes" />
+            <UsageBadge used={queriesUsed} total={5} label="Consultas usadas este mes" />
           </div>
         )}
       </div>
@@ -284,7 +284,7 @@ export function AskVictor() {
 
       {!isAdmin && !atLimit && (
         <p className="text-xs text-muted-foreground text-center mt-2">
-          {10 - queriesUsed} consultas restantes
+          {5 - queriesUsed} consultas restantes
         </p>
       )}
 
@@ -298,7 +298,7 @@ export function AskVictor() {
               queriesUsed >= 8 ? 'bg-yellow-500/10 text-yellow-500' : ''
             )}
           >
-            {queriesUsed}/10 consultas
+            {queriesUsed}/5 consultas
           </Badge>
         </div>
       )}

@@ -18,6 +18,10 @@ export interface Database {
           role: 'user' | 'admin'
           scripts_used: number
           queries_used: number
+          monthly_revenue: string | null
+          revenue_goal: string | null
+          ad_spend: string | null
+          objetivo: string | null
           created_at: string
           updated_at: string
         }
@@ -29,6 +33,10 @@ export interface Database {
           role?: 'user' | 'admin'
           scripts_used?: number
           queries_used?: number
+          monthly_revenue?: string | null
+          revenue_goal?: string | null
+          ad_spend?: string | null
+          objetivo?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -40,6 +48,10 @@ export interface Database {
           role?: 'user' | 'admin'
           scripts_used?: number
           queries_used?: number
+          monthly_revenue?: string | null
+          revenue_goal?: string | null
+          ad_spend?: string | null
+          objetivo?: string | null
           created_at?: string
           updated_at?: string
         }

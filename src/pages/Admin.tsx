@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Loader2, UserPlus, Trash2, Users, RefreshCw } from 'lucide-react'
+import { Loader2, UserPlus, Trash2, Users, RefreshCw, Eye } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Textarea } from '@/components/ui/textarea'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
@@ -19,10 +20,15 @@ export function Admin() {
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
   const [showInviteForm, setShowInviteForm] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<Profile | null>(null)
+  const [viewLead, setViewLead] = useState<Profile | null>(null)
 
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteName, setInviteName] = useState('')
   const [inviteNiche, setInviteNiche] = useState('')
+  const [inviteMonthlyRevenue, setInviteMonthlyRevenue] = useState('')
+  const [inviteRevenueGoal, setInviteRevenueGoal] = useState('')
+  const [inviteAdSpend, setInviteAdSpend] = useState('')
+  const [inviteObjetivo, setInviteObjetivo] = useState('')
 
   const loadUsers = async () => {
     setLoading(true)
@@ -36,6 +42,16 @@ export function Admin() {
 
   useEffect(() => { loadUsers() }, [])
 
+  const resetInviteForm = () => {
+    setInviteEmail('')
+    setInviteName('')
+    setInviteNiche('')
+    setInviteMonthlyRevenue('')
+    setInviteRevenueGoal('')
+    setInviteAdSpend('')
+    setInviteObjetivo('')
+  }
+
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!inviteEmail) {
@@ -48,7 +64,15 @@ export function Admin() {
       if (!session) throw new Error('No session')
 
       const response = await supabase.functions.invoke('invite-user', {
-        body: { email: inviteEmail, full_name: inviteName, niche: inviteNiche },
+        body: {
+          email: inviteEmail,
+          full_name: inviteName,
+          niche: inviteNiche,
+          monthly_revenue: inviteMonthlyRevenue,
+          revenue_goal: inviteRevenueGoal,
+          ad_spend: inviteAdSpend,
+          objetivo: inviteObjetivo,
+        },
         headers: { Authorization: `Bearer ${session.access_token}` },
       })
 
@@ -62,9 +86,7 @@ export function Admin() {
       }
 
       toast({ title: 'Invitación enviada', description: `Se envió el link de acceso a ${inviteEmail}` })
-      setInviteEmail('')
-      setInviteName('')
-      setInviteNiche('')
+      resetInviteForm()
       setShowInviteForm(false)
       await loadUsers()
     } catch (err: unknown) {
@@ -78,14 +100,8 @@ export function Admin() {
   const handleDelete = async (user: Profile) => {
     setDeleteLoading(user.id)
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) throw new Error('No session')
-
-      // Delete from auth using admin API — only works if you have service role in edge function
-      // For now we delete the profile (cascade will handle auth.users via DB trigger if set)
       const { error } = await supabase.from('profiles').delete().eq('id', user.id)
       if (error) throw error
-
       toast({ title: 'Usuario eliminado', description: `${user.email} ha sido eliminado.` })
       setDeleteConfirm(null)
       await loadUsers()
@@ -102,7 +118,7 @@ export function Admin() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold mb-1">Panel de Administración</h1>
-          <p className="text-muted-foreground text-sm">Gestiona los usuarios de Viralidad Lite</p>
+          <p className="text-muted-foreground text-sm">Gestiona los leads de Viralidad Lite</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={loadUsers} disabled={loading}>
@@ -120,7 +136,7 @@ export function Admin() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <Card className="bg-card border-border">
           <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground">Total usuarios</p>
+            <p className="text-xs text-muted-foreground">Total leads</p>
             <p className="text-2xl font-bold">{users.filter(u => u.role === 'user').length}</p>
           </CardContent>
         </Card>
@@ -139,7 +155,7 @@ export function Admin() {
         <Card className="bg-card border-border">
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground">Límite alcanzado</p>
-            <p className="text-2xl font-bold">{users.filter(u => u.scripts_used >= 10 || u.queries_used >= 10).length}</p>
+            <p className="text-2xl font-bold">{users.filter(u => u.scripts_used >= 10 || u.queries_used >= 5).length}</p>
           </CardContent>
         </Card>
       </div>
@@ -149,7 +165,7 @@ export function Admin() {
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Users className="w-4 h-4" />
-            Usuarios ({users.length})
+            Leads ({users.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -161,29 +177,31 @@ export function Admin() {
             <p className="text-center text-muted-foreground py-8 text-sm">No hay usuarios registrados</p>
           ) : (
             <div className="space-y-0">
-              {/* Header */}
               <div className="grid grid-cols-12 gap-3 px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                <div className="col-span-3">Usuario</div>
+                <div className="col-span-4">Lead</div>
                 <div className="col-span-2">Nicho</div>
                 <div className="col-span-2 text-center">Guiones</div>
                 <div className="col-span-2 text-center">Consultas</div>
-                <div className="col-span-2">Registro</div>
-                <div className="col-span-1" />
+                <div className="col-span-2 text-right">Acciones</div>
               </div>
               <Separator />
               {users.map((user, i) => (
                 <div key={user.id}>
                   {i > 0 && <Separator />}
                   <div className="grid grid-cols-12 gap-3 px-3 py-3 items-center hover:bg-accent/50 rounded-md transition-colors">
-                    <div className="col-span-3 min-w-0">
+                    <div className="col-span-4 min-w-0">
                       <p className="font-medium text-sm truncate">{user.full_name || '—'}</p>
                       <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(user.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: '2-digit' })}
+                        {user.role === 'admin' && (
+                          <Badge className="ml-2 text-xs bg-primary/20 text-primary border-primary/30">Admin</Badge>
+                        )}
+                      </p>
                     </div>
                     <div className="col-span-2">
                       {user.niche ? (
-                        <Badge variant="secondary" className="text-xs truncate max-w-full">
-                          {user.niche}
-                        </Badge>
+                        <Badge variant="secondary" className="text-xs truncate max-w-full">{user.niche}</Badge>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>
                       )}
@@ -194,21 +212,20 @@ export function Admin() {
                       </span>
                     </div>
                     <div className="col-span-2 text-center">
-                      <span className={`text-sm font-medium ${user.queries_used >= 10 ? 'text-destructive' : user.queries_used >= 8 ? 'text-yellow-500' : ''}`}>
-                        {user.queries_used}/10
+                      <span className={`text-sm font-medium ${user.queries_used >= 5 ? 'text-destructive' : user.queries_used >= 4 ? 'text-yellow-500' : ''}`}>
+                        {user.queries_used}/5
                       </span>
                     </div>
-                    <div className="col-span-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(user.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: '2-digit' })}
-                        </span>
-                        {user.role === 'admin' && (
-                          <Badge className="text-xs bg-primary/20 text-primary border-primary/30">Admin</Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="col-span-1 flex justify-end">
+                    <div className="col-span-2 flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-7 h-7 text-muted-foreground hover:text-primary"
+                        onClick={() => setViewLead(user)}
+                        title="Ver perfil del lead"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                      </Button>
                       {user.role !== 'admin' && (
                         <Button
                           variant="ghost"
@@ -234,46 +251,45 @@ export function Admin() {
       </Card>
 
       {/* Invite dialog */}
-      <Dialog open={showInviteForm} onOpenChange={setShowInviteForm}>
-        <DialogContent className="bg-card border-border">
+      <Dialog open={showInviteForm} onOpenChange={(open) => { if (!open) resetInviteForm(); setShowInviteForm(open) }}>
+        <DialogContent className="bg-card border-border max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Invitar nuevo usuario</DialogTitle>
+            <DialogTitle>Invitar nuevo lead</DialogTitle>
             <DialogDescription>
-              El usuario recibirá un email con un link para crear su cuenta.
+              Rellena la información del lead antes de enviar la invitación.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleInvite} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="inviteEmail">Email *</Label>
-              <Input
-                id="inviteEmail"
-                type="email"
-                placeholder="usuario@email.com"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                required
-              />
+              <Input id="inviteEmail" type="email" placeholder="lead@email.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} required />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="inviteName">Nombre completo</Label>
-              <Input
-                id="inviteName"
-                placeholder="Juan García"
-                value={inviteName}
-                onChange={(e) => setInviteName(e.target.value)}
-              />
+              <Input id="inviteName" placeholder="Juan García" value={inviteName} onChange={(e) => setInviteName(e.target.value)} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="inviteNiche">Nicho</Label>
-              <Input
-                id="inviteNiche"
-                placeholder="Ej: fitness, finanzas personales..."
-                value={inviteNiche}
-                onChange={(e) => setInviteNiche(e.target.value)}
-              />
+              <Input id="inviteNiche" placeholder="Ej: fitness, finanzas personales..." value={inviteNiche} onChange={(e) => setInviteNiche(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="inviteMonthlyRevenue">¿Cuánto generas al mes?</Label>
+              <Input id="inviteMonthlyRevenue" placeholder="Ej: $500, nada por ahora..." value={inviteMonthlyRevenue} onChange={(e) => setInviteMonthlyRevenue(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="inviteRevenueGoal">¿Cuánto quieres generar?</Label>
+              <Input id="inviteRevenueGoal" placeholder="Ej: $5,000 al mes" value={inviteRevenueGoal} onChange={(e) => setInviteRevenueGoal(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="inviteAdSpend">¿Cuánto inviertes en anuncios?</Label>
+              <Input id="inviteAdSpend" placeholder="Ej: $200/mes, ninguno..." value={inviteAdSpend} onChange={(e) => setInviteAdSpend(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="inviteObjetivo">Objetivo con su cuenta</Label>
+              <Textarea id="inviteObjetivo" placeholder="Contexto del lead: qué busca, situación actual, objeciones..." value={inviteObjetivo} onChange={(e) => setInviteObjetivo(e.target.value)} rows={3} />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowInviteForm(false)}>
+              <Button type="button" variant="outline" onClick={() => { resetInviteForm(); setShowInviteForm(false) }}>
                 Cancelar
               </Button>
               <Button type="submit" disabled={inviteLoading}>
@@ -285,6 +301,59 @@ export function Admin() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Lead profile dialog */}
+      <Dialog open={!!viewLead} onOpenChange={(open) => !open && setViewLead(null)}>
+        <DialogContent className="bg-card border-border max-w-md">
+          <DialogHeader>
+            <DialogTitle>Perfil del lead</DialogTitle>
+            <DialogDescription>{viewLead?.email}</DialogDescription>
+          </DialogHeader>
+          {viewLead && (
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Nombre</p>
+                  <p className="font-medium">{viewLead.full_name || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Nicho</p>
+                  <p className="font-medium">{viewLead.niche || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Genera al mes</p>
+                  <p className="font-medium">{viewLead.monthly_revenue || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Quiere generar</p>
+                  <p className="font-medium">{viewLead.revenue_goal || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Invierte en anuncios</p>
+                  <p className="font-medium">{viewLead.ad_spend || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">Uso de la app</p>
+                  <p className="font-medium">{viewLead.scripts_used} guiones · {viewLead.queries_used} consultas</p>
+                </div>
+              </div>
+              {viewLead.objetivo && (
+                <>
+                  <Separator />
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Objetivo / contexto</p>
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{viewLead.objetivo}</p>
+                  </div>
+                </>
+              )}
+              <Separator />
+              <p className="text-xs text-muted-foreground">
+                Registrado el {new Date(viewLead.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </p>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -300,19 +369,9 @@ export function Admin() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => deleteConfirm && handleDelete(deleteConfirm)}
-              disabled={!!deleteLoading}
-            >
-              {deleteLoading ? (
-                <><Loader2 className="w-4 h-4 animate-spin mr-2" />Eliminando...</>
-              ) : (
-                <>Eliminar usuario</>
-              )}
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>Cancelar</Button>
+            <Button variant="destructive" onClick={() => deleteConfirm && handleDelete(deleteConfirm)} disabled={!!deleteLoading}>
+              {deleteLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" />Eliminando...</> : 'Eliminar usuario'}
             </Button>
           </DialogFooter>
         </DialogContent>

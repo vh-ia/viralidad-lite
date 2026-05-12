@@ -18,12 +18,10 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-    // Create client with user's JWT to check their role
     const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
       global: { headers: { Authorization: authHeader } },
     })
 
-    // Verify caller is admin
     const { data: { user }, error: authError } = await userClient.auth.getUser()
     if (authError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -45,8 +43,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Parse body
-    const { email, full_name, niche } = await req.json()
+    const { email, full_name, niche, monthly_revenue, revenue_goal, ad_spend, objetivo } = await req.json()
     if (!email) {
       return new Response(JSON.stringify({ error: 'Email is required' }), {
         status: 400,
@@ -54,8 +51,9 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Use admin client to invite user
     const adminClient = createClient(supabaseUrl, serviceRoleKey)
+
+    // Invite the user via Supabase Auth
     const { data, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
       data: {
         full_name: full_name ?? '',
@@ -71,6 +69,20 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
+
+    // Save extra lead fields to the profile (created by the DB trigger on invite)
+    // We upsert in case the trigger hasn't fired yet
+    await adminClient
+      .from('profiles')
+      .update({
+        full_name: full_name ?? null,
+        niche: niche ?? null,
+        monthly_revenue: monthly_revenue ?? null,
+        revenue_goal: revenue_goal ?? null,
+        ad_spend: ad_spend ?? null,
+        objetivo: objetivo ?? null,
+      })
+      .eq('id', data.user.id)
 
     return new Response(JSON.stringify({ success: true, user: data.user }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
