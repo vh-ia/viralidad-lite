@@ -10,10 +10,12 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
 import { useToast } from '@/components/ui/use-toast'
+import { useAuth } from '@/hooks/useAuth'
 import type { Profile } from '@/integrations/supabase/types'
 
 export function Admin() {
   const { toast } = useToast()
+  const { isMaster } = useAuth()
   const [users, setUsers] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
   const [inviteLoading, setInviteLoading] = useState(false)
@@ -253,21 +255,23 @@ export function Admin() {
                       <Button variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground hover:text-primary" onClick={() => setViewLead(user)} title="Ver perfil">
                         <Eye className="w-3.5 h-3.5" />
                       </Button>
-                      {/* Toggle rol */}
-                      <Button
-                        variant="ghost" size="icon"
-                        className={`w-7 h-7 ${user.role === 'admin' ? 'text-primary hover:text-muted-foreground' : 'text-muted-foreground hover:text-primary'}`}
-                        onClick={() => handleToggleRole(user)}
-                        disabled={roleLoading === user.id}
-                        title={user.role === 'admin' ? 'Quitar admin' : 'Hacer admin'}
-                      >
-                        {roleLoading === user.id
-                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          : user.role === 'admin'
-                            ? <ShieldOff className="w-3.5 h-3.5" />
-                            : <Shield className="w-3.5 h-3.5" />
-                        }
-                      </Button>
+                      {/* Toggle rol — solo master puede cambiar roles */}
+                      {isMaster && user.role !== 'master' && (
+                        <Button
+                          variant="ghost" size="icon"
+                          className={`w-7 h-7 ${user.role === 'admin' ? 'text-primary hover:text-muted-foreground' : 'text-muted-foreground hover:text-primary'}`}
+                          onClick={() => handleToggleRole(user)}
+                          disabled={roleLoading === user.id}
+                          title={user.role === 'admin' ? 'Quitar admin' : 'Hacer admin'}
+                        >
+                          {roleLoading === user.id
+                            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            : user.role === 'admin'
+                              ? <ShieldOff className="w-3.5 h-3.5" />
+                              : <Shield className="w-3.5 h-3.5" />
+                          }
+                        </Button>
+                      )}
                       {/* Eliminar */}
                       <Button
                         variant="ghost" size="icon"
@@ -326,20 +330,22 @@ export function Admin() {
               <Label htmlFor="inviteObjetivo">Objetivo / contexto</Label>
               <Textarea id="inviteObjetivo" placeholder="Situación actual, qué busca, objeciones..." value={inviteObjetivo} onChange={(e) => setInviteObjetivo(e.target.value)} rows={3} />
             </div>
-            {/* Admin toggle */}
-            <div className="flex items-center gap-3 py-2 px-3 rounded-lg border border-border bg-background/50">
-              <input
-                type="checkbox"
-                id="inviteAsAdmin"
-                checked={inviteAsAdmin}
-                onChange={(e) => setInviteAsAdmin(e.target.checked)}
-                className="w-4 h-4 accent-primary"
-              />
-              <div>
-                <label htmlFor="inviteAsAdmin" className="text-sm font-medium cursor-pointer">Invitar como Admin (closer)</label>
-                <p className="text-xs text-muted-foreground">Tendrá acceso al panel de administración</p>
+            {/* Admin toggle — solo visible para master */}
+            {isMaster && (
+              <div className="flex items-center gap-3 py-2 px-3 rounded-lg border border-border bg-background/50">
+                <input
+                  type="checkbox"
+                  id="inviteAsAdmin"
+                  checked={inviteAsAdmin}
+                  onChange={(e) => setInviteAsAdmin(e.target.checked)}
+                  className="w-4 h-4 accent-primary"
+                />
+                <div>
+                  <label htmlFor="inviteAsAdmin" className="text-sm font-medium cursor-pointer">Invitar como Admin (closer)</label>
+                  <p className="text-xs text-muted-foreground">Tendrá acceso al panel de administración</p>
+                </div>
               </div>
-            </div>
+            )}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => { resetInviteForm(); setShowInviteForm(false) }}>Cancelar</Button>
               <Button type="submit" disabled={inviteLoading}>

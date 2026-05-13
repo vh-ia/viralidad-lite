@@ -15,7 +15,7 @@ export interface Database {
           email: string
           full_name: string | null
           niche: string | null
-          role: 'user' | 'admin'
+          role: 'user' | 'admin' | 'master'
           scripts_used: number
           queries_used: number
           monthly_revenue: string | null
@@ -30,7 +30,7 @@ export interface Database {
           email: string
           full_name?: string | null
           niche?: string | null
-          role?: 'user' | 'admin'
+          role?: 'user' | 'admin' | 'master'
           scripts_used?: number
           queries_used?: number
           monthly_revenue?: string | null
@@ -45,7 +45,7 @@ export interface Database {
           email?: string
           full_name?: string | null
           niche?: string | null
-          role?: 'user' | 'admin'
+          role?: 'user' | 'admin' | 'master'
           scripts_used?: number
           queries_used?: number
           monthly_revenue?: string | null

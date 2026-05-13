@@ -56,8 +56,8 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Check limit (admins bypass)
-    if (profile.role !== 'admin' && profile.scripts_used >= 10) {
+    // Check limit (admins and master bypass)
+    if (profile.role === 'user' && profile.scripts_used >= 10) {
       return new Response(
         JSON.stringify({
           error: 'Límite de guiones alcanzado. Actualiza tu plan en viralidad.ai',
@@ -143,8 +143,8 @@ Notas de producción: [indicaciones breves de entrega/pausa]`
     // Create admin client to bypass RLS for insert + increment
     const adminClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
-    // Increment usage if not admin
-    if (profile.role !== 'admin') {
+    // Increment usage only for regular users
+    if (profile.role === 'user') {
       await adminClient.rpc('increment_usage', {
         p_user_id: user.id,
         p_field: 'scripts',

@@ -7,7 +7,8 @@ export interface AuthContextType {
   session: Session | null
   profile: Profile | null
   loading: boolean
-  isAdmin: boolean
+  isAdmin: boolean  // true for admin AND master
+  isMaster: boolean // true only for master
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
 }
@@ -17,6 +18,7 @@ export const AuthContext = createContext<AuthContextType>({
   profile: null,
   loading: true,
   isAdmin: false,
+  isMaster: false,
   signOut: async () => {},
   refreshProfile: async () => {},
 })

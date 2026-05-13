@@ -32,7 +32,7 @@ export function AdminRoute({ children }: AdminRouteProps) {
     )
   }
 
-  if (profile?.role !== 'admin') {
+  if (!['admin', 'master'].includes(profile?.role ?? '')) {
     return <Navigate to="/dashboard" replace />
   }
 
