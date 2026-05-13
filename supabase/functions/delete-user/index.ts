@@ -18,10 +18,10 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
+    // Verify caller is admin
     const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
       global: { headers: { Authorization: authHeader } },
     })
-
     const { data: { user }, error: authError } = await userClient.auth.getUser()
     if (authError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -29,63 +29,42 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
-
-    const { data: profile, error: profileError } = await userClient
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError || profile?.role !== 'admin') {
+    const { data: callerProfile } = await userClient
+      .from('profiles').select('role').eq('id', user.id).single()
+    if (callerProfile?.role !== 'admin') {
       return new Response(JSON.stringify({ error: 'Forbidden: admin only' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    const { email, full_name, niche, monthly_revenue, revenue_goal, ad_spend, objetivo, role: inviteRole } = await req.json()
-    if (!email) {
-      return new Response(JSON.stringify({ error: 'Email is required' }), {
+    const { user_id } = await req.json()
+    if (!user_id) {
+      return new Response(JSON.stringify({ error: 'user_id is required' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
+    // Prevent self-deletion
+    if (user_id === user.id) {
+      return new Response(JSON.stringify({ error: 'No puedes eliminarte a ti mismo' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Delete from auth.users — cascade removes profile
     const adminClient = createClient(supabaseUrl, serviceRoleKey)
-
-    // Invite the user via Supabase Auth
-    const { data, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
-      data: {
-        full_name: full_name ?? '',
-        niche: niche ?? '',
-        role: inviteRole === 'admin' ? 'admin' : 'user',
-      },
-      redirectTo: 'https://viralidad-lite.vercel.app/login',
-    })
-
-    if (inviteError) {
-      return new Response(JSON.stringify({ error: inviteError.message }), {
+    const { error: deleteError } = await adminClient.auth.admin.deleteUser(user_id)
+    if (deleteError) {
+      return new Response(JSON.stringify({ error: deleteError.message }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    // Save extra lead fields to the profile (created by the DB trigger on invite)
-    // We upsert in case the trigger hasn't fired yet
-    await adminClient
-      .from('profiles')
-      .update({
-        full_name: full_name ?? null,
-        niche: niche ?? null,
-        monthly_revenue: monthly_revenue ?? null,
-        revenue_goal: revenue_goal ?? null,
-        ad_spend: ad_spend ?? null,
-        objetivo: objetivo ?? null,
-        role: inviteRole === 'admin' ? 'admin' : 'user',
-      })
-      .eq('id', data.user.id)
-
-    return new Response(JSON.stringify({ success: true, user: data.user }), {
+    return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err) {
