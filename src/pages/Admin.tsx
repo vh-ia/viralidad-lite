@@ -341,7 +341,7 @@ export function Admin() {
                   className="w-4 h-4 accent-primary"
                 />
                 <div>
-                  <label htmlFor="inviteAsAdmin" className="text-sm font-medium cursor-pointer">Invitar como Admin (closer)</label>
+                  <label htmlFor="inviteAsAdmin" className="text-sm font-medium cursor-pointer">Invitar como Admin (Asesor)</label>
                   <p className="text-xs text-muted-foreground">Tendrá acceso al panel de administración</p>
                 </div>
               </div>

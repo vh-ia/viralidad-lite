@@ -83,7 +83,7 @@ export function Scripts() {
       return
     }
     if (atLimit) {
-      toast({ title: 'Límite alcanzado', description: 'Has usado tus 10 guiones. Actualiza en viralidad.ai', variant: 'destructive' })
+      toast({ title: 'Límite alcanzado', description: 'Has usado tus 10 guiones. Actualiza en viralidad.com', variant: 'destructive' })
       return
     }
 
@@ -232,8 +232,8 @@ export function Scripts() {
 
               {atLimit && (
                 <p className="text-xs text-center text-muted-foreground">
-                  <a href="https://viralidad.ai" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                    Actualiza en viralidad.ai
+                  <a href="https://viralidad.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                    Actualiza en viralidad.com
                   </a>{' '}
                   para guiones ilimitados
                 </p>

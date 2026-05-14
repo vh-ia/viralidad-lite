@@ -255,9 +255,9 @@ export function AskVictor() {
       {/* Input */}
       {atLimit ? (
         <div className="text-center py-4 border border-border rounded-lg bg-card">
-          <p className="text-sm text-muted-foreground mb-3">Has usado tus 10 consultas gratuitas</p>
-          <Button size="sm" onClick={() => window.open('https://viralidad.ai', '_blank')}>
-            Actualizar en viralidad.ai
+          <p className="text-sm text-muted-foreground mb-3">Has usado tus 5 consultas gratuitas</p>
+          <Button size="sm" onClick={() => window.open('https://viralidad.com', '_blank')}>
+            Actualizar en viralidad.com
           </Button>
         </div>
       ) : (

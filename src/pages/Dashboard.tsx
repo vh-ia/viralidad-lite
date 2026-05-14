@@ -145,14 +145,14 @@ export function Dashboard() {
                 <div>
                   <p className="font-semibold text-sm">Desbloquea el potencial completo</p>
                   <p className="text-xs text-muted-foreground">
-                    Transcripciones, análisis, recreación de contenido y más en viralidad.ai
+                    Transcripciones, análisis, recreación de contenido y más en viralidad.com
                   </p>
                 </div>
               </div>
               <Button
                 size="sm"
                 className="shrink-0"
-                onClick={() => window.open('https://viralidad.ai', '_blank')}
+                onClick={() => window.open('https://viralidad.com', '_blank')}
               >
                 Ver más
               </Button>
