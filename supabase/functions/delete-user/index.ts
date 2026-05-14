@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
     }
     const { data: callerProfile } = await userClient
       .from('profiles').select('role').eq('id', user.id).single()
-    if (callerProfile?.role !== 'admin') {
+    if (!['admin', 'master'].includes(callerProfile?.role ?? '')) {
       return new Response(JSON.stringify({ error: 'Forbidden: admin only' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
