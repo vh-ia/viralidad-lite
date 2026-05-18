@@ -36,14 +36,14 @@ Deno.serve(async (req) => {
       .eq('id', user.id)
       .single()
 
-    if (profileError || profile?.role !== 'admin') {
+    if (profileError || (profile?.role !== 'admin' && profile?.role !== 'master')) {
       return new Response(JSON.stringify({ error: 'Forbidden: admin only' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    const { email, full_name, niche, monthly_revenue, revenue_goal, ad_spend, objetivo, role: inviteRole } = await req.json()
+    const { email, full_name, niche, monthly_revenue, revenue_goal, ad_spend, objetivo, role: inviteRole, resend } = await req.json()
     if (!email) {
       return new Response(JSON.stringify({ error: 'Email is required' }), {
         status: 400,
@@ -64,6 +64,22 @@ Deno.serve(async (req) => {
     })
 
     if (inviteError) {
+      // User already confirmed (clicked a previous invite link) — send a recovery link instead
+      const alreadyExists = inviteError.message.toLowerCase().includes('already')
+      if (alreadyExists) {
+        const { error: resetError } = await adminClient.auth.resetPasswordForEmail(email, {
+          redirectTo: 'https://viralidad-lite.vercel.app/login',
+        })
+        if (resetError) {
+          return new Response(JSON.stringify({ error: resetError.message }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        }
+        return new Response(JSON.stringify({ success: true, resent: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
       return new Response(JSON.stringify({ error: inviteError.message }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -72,18 +88,20 @@ Deno.serve(async (req) => {
 
     // Save extra lead fields to the profile (created by the DB trigger on invite)
     // We upsert in case the trigger hasn't fired yet
-    await adminClient
-      .from('profiles')
-      .update({
-        full_name: full_name ?? null,
-        niche: niche ?? null,
-        monthly_revenue: monthly_revenue ?? null,
-        revenue_goal: revenue_goal ?? null,
-        ad_spend: ad_spend ?? null,
-        objetivo: objetivo ?? null,
-        role: inviteRole === 'admin' ? 'admin' : 'user',
-      })
-      .eq('id', data.user.id)
+    if (!resend) {
+      await adminClient
+        .from('profiles')
+        .update({
+          full_name: full_name ?? null,
+          niche: niche ?? null,
+          monthly_revenue: monthly_revenue ?? null,
+          revenue_goal: revenue_goal ?? null,
+          ad_spend: ad_spend ?? null,
+          objetivo: objetivo ?? null,
+          role: inviteRole === 'admin' ? 'admin' : 'user',
+        })
+        .eq('id', data.user.id)
+    }
 
     return new Response(JSON.stringify({ success: true, user: data.user }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

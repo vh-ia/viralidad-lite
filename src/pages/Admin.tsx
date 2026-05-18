@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Loader2, UserPlus, Trash2, Users, RefreshCw, Eye, Search, Shield, ShieldOff } from 'lucide-react'
+import { Loader2, UserPlus, Trash2, Users, RefreshCw, Eye, Search, Shield, ShieldOff, Mail } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,6 +21,7 @@ export function Admin() {
   const [inviteLoading, setInviteLoading] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
   const [roleLoading, setRoleLoading] = useState<string | null>(null)
+  const [resendLoading, setResendLoading] = useState<string | null>(null)
   const [showInviteForm, setShowInviteForm] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState<Profile | null>(null)
   const [viewLead, setViewLead] = useState<Profile | null>(null)
@@ -132,6 +133,29 @@ export function Admin() {
     } catch (err: unknown) {
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Error al eliminar', variant: 'destructive' })
     } finally { setDeleteLoading(null) }
+  }
+
+  const handleResend = async (user: Profile) => {
+    setResendLoading(user.id)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('No session')
+
+      const response = await supabase.functions.invoke('invite-user', {
+        body: { email: user.email, resend: true },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+
+      if (response.error) {
+        let detail = response.error.message
+        try { const b = await (response.error as any).context?.json?.(); if (b?.error) detail = b.error } catch {}
+        throw new Error(detail)
+      }
+
+      toast({ title: 'Acceso reenviado', description: `Nuevo enlace enviado a ${user.email}` })
+    } catch (err: unknown) {
+      toast({ title: 'Error', description: err instanceof Error ? err.message : 'Error al reenviar', variant: 'destructive' })
+    } finally { setResendLoading(null) }
   }
 
   return (
@@ -272,6 +296,19 @@ export function Admin() {
                           }
                         </Button>
                       )}
+                      {/* Reenviar acceso */}
+                      <Button
+                        variant="ghost" size="icon"
+                        className="w-7 h-7 text-muted-foreground hover:text-primary"
+                        onClick={() => handleResend(user)}
+                        disabled={resendLoading === user.id}
+                        title="Reenviar acceso"
+                      >
+                        {resendLoading === user.id
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          : <Mail className="w-3.5 h-3.5" />
+                        }
+                      </Button>
                       {/* Eliminar */}
                       <Button
                         variant="ghost" size="icon"

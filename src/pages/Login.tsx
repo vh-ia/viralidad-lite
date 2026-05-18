@@ -9,6 +9,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useToast } from '@/components/ui/use-toast'
 import { Toaster } from '@/components/ui/toaster'
 
+function Logo() {
+  return (
+    <div className="flex justify-center mb-8">
+      <div className="flex items-center gap-2.5">
+        <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
+          <Zap className="w-5 h-5 text-white" />
+        </div>
+        <span className="text-xl font-bold">Viralidad Lite</span>
+      </div>
+    </div>
+  )
+}
+
 export function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -17,6 +30,10 @@ export function Login() {
   const [isSettingPassword, setIsSettingPassword] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [linkExpired, setLinkExpired] = useState(false)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotSent, setForgotSent] = useState(false)
   const { toast } = useToast()
   const navigate = useNavigate()
 
@@ -39,9 +56,17 @@ export function Login() {
     const urlParams = new URLSearchParams(window.location.search)
     const code = urlParams.get('code')
     if (code) {
-      supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
+      supabase.auth.exchangeCodeForSession(code).then(async ({ data, error }) => {
         if (!error && data.session) {
           setIsSettingPassword(true)
+        } else if (error) {
+          // Code already used or expired — check if there's an active session
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session) {
+            navigate('/dashboard')
+          } else {
+            setLinkExpired(true)
+          }
         }
       })
     }
@@ -90,20 +115,62 @@ export function Login() {
     setLoading(false)
   }
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!forgotEmail) {
+      toast({ title: 'Email requerido', variant: 'destructive' })
+      return
+    }
+    setLoading(true)
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: 'https://viralidad-lite.vercel.app/login',
+    })
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' })
+    } else {
+      setForgotSent(true)
+    }
+    setLoading(false)
+  }
+
+  if (linkExpired) {
+    return (
+      <>
+        <div className="min-h-screen flex items-center justify-center bg-background px-4">
+          <div className="w-full max-w-sm">
+            <Logo />
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle>Enlace expirado</CardTitle>
+                <CardDescription>
+                  Este enlace ya fue utilizado o ha expirado. Cada enlace solo puede usarse una vez.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Si ya configuraste tu contraseña, puedes iniciar sesión normalmente. Si aún no tienes acceso, pide a tu asesor que te reenvíe la invitación.
+                </p>
+                <Button className="w-full" onClick={() => {
+                  setLinkExpired(false)
+                  window.history.replaceState({}, '', '/login')
+                }}>
+                  Ir al inicio de sesión
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+        <Toaster />
+      </>
+    )
+  }
+
   if (isSettingPassword) {
     return (
       <>
         <div className="min-h-screen flex items-center justify-center bg-background px-4">
           <div className="w-full max-w-sm">
-            <div className="flex justify-center mb-8">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-                  <Zap className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold">Viralidad Lite</span>
-              </div>
-            </div>
-
+            <Logo />
             <Card className="bg-card border-border">
               <CardHeader>
                 <CardTitle>Crea tu contraseña</CardTitle>
@@ -148,20 +215,73 @@ export function Login() {
     )
   }
 
+  if (showForgotPassword) {
+    return (
+      <>
+        <div className="min-h-screen flex items-center justify-center bg-background px-4">
+          <div className="w-full max-w-sm">
+            <Logo />
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle>Recuperar contraseña</CardTitle>
+                <CardDescription>
+                  {forgotSent
+                    ? 'Revisa tu correo y haz clic en el enlace para crear una nueva contraseña.'
+                    : 'Te enviaremos un enlace para restablecer tu contraseña.'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {forgotSent ? (
+                  <div className="space-y-4">
+                    <p className="text-sm text-muted-foreground">
+                      Si el email está registrado, recibirás el enlace en breve. Revisa también la carpeta de spam.
+                    </p>
+                    <Button variant="outline" className="w-full" onClick={() => {
+                      setShowForgotPassword(false)
+                      setForgotSent(false)
+                      setForgotEmail('')
+                    }}>
+                      Volver al inicio de sesión
+                    </Button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="forgotEmail">Email</Label>
+                      <Input
+                        id="forgotEmail"
+                        type="email"
+                        placeholder="tu@email.com"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        autoComplete="email"
+                      />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? 'Enviando...' : 'Enviar enlace de recuperación'}
+                    </Button>
+                    <Button type="button" variant="ghost" className="w-full" onClick={() => {
+                      setShowForgotPassword(false)
+                      setForgotEmail('')
+                    }}>
+                      Volver
+                    </Button>
+                  </form>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+        <Toaster />
+      </>
+    )
+  }
+
   return (
     <>
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
         <div className="w-full max-w-sm">
-          {/* Logo */}
-          <div className="flex justify-center mb-8">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-                <Zap className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold">Viralidad Lite</span>
-            </div>
-          </div>
-
+          <Logo />
           <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle>Iniciar sesión</CardTitle>
@@ -183,7 +303,19 @@ export function Login() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="password">Contraseña</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Contraseña</Label>
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground hover:text-primary"
+                      onClick={() => {
+                        setForgotEmail(email)
+                        setShowForgotPassword(true)
+                      }}
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </button>
+                  </div>
                   <div className="relative">
                     <Input
                       id="password"
