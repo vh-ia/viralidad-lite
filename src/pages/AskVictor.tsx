@@ -158,7 +158,7 @@ export function AskVictor() {
   }
 
   return (
-    <div className="flex flex-col h-screen p-6 max-w-3xl">
+    <div className="flex flex-col h-[calc(100dvh-3.5rem)] lg:h-screen p-4 md:p-6 max-w-3xl">
       {/* Header */}
       <div className="mb-4">
         <h1 className="text-2xl font-bold mb-1">Pregunta a Víctor</h1>

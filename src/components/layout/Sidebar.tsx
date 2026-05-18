@@ -19,12 +19,12 @@ import {
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 
@@ -47,7 +47,12 @@ const navItems: NavItem[] = [
   { to: '/calendar', label: 'Calendario Editorial', icon: <Calendar className="w-4 h-4" />, locked: true },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { profile, signOut, isAdmin } = useAuth()
   const navigate = useNavigate()
   const { toast } = useToast()
@@ -58,6 +63,7 @@ export function Sidebar() {
   const [savingPassword, setSavingPassword] = useState(false)
 
   const handleSignOut = async () => {
+    onClose()
     await signOut()
     navigate('/login')
   }
@@ -91,7 +97,12 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="w-64 shrink-0 h-screen sticky top-0 flex flex-col border-r border-border bg-card">
+      <aside className={cn(
+        'w-64 shrink-0 h-screen flex flex-col border-r border-border bg-card',
+        'fixed inset-y-0 left-0 z-50 transition-transform duration-200 ease-in-out',
+        'lg:sticky lg:top-0',
+        isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      )}>
         {/* Logo */}
         <div className="p-5 flex items-center gap-2.5 border-b border-border">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
@@ -110,6 +121,7 @@ export function Sidebar() {
               <NavLink
                 key={item.to}
                 to={item.to}
+                onClick={onClose}
                 className={({ isActive }) =>
                   cn(
                     'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors group',
@@ -136,6 +148,7 @@ export function Sidebar() {
               </p>
               <NavLink
                 to="/admin"
+                onClick={onClose}
                 className={({ isActive }) =>
                   cn(
                     'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors mt-0.5',

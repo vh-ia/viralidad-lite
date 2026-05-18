@@ -3,7 +3,7 @@ import { LockedFeature } from '@/components/shared/LockedFeature'
 
 export function RecreateContent() {
   return (
-    <div className="p-6 h-full">
+    <div className="p-4 sm:p-6 h-full">
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-1">Recrear Contenido</h1>
         <p className="text-muted-foreground text-sm">Adapta videos virales a tu nicho y estilo</p>

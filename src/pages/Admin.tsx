@@ -159,7 +159,7 @@ export function Admin() {
   }
 
   return (
-    <div className="p-6 max-w-5xl">
+    <div className="p-4 sm:p-6 max-w-5xl">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold mb-1">Panel de Administración</h1>
@@ -235,18 +235,64 @@ export function Admin() {
             </p>
           ) : (
             <div className="space-y-0">
-              <div className="grid grid-cols-12 gap-2 px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              {/* Desktop header — hidden on mobile */}
+              <div className="hidden sm:grid grid-cols-12 gap-2 px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 <div className="col-span-4">Usuario</div>
                 <div className="col-span-2">Nicho</div>
                 <div className="col-span-1 text-center">Guiones</div>
                 <div className="col-span-1 text-center">Consultas</div>
                 <div className="col-span-4 text-right">Acciones</div>
               </div>
-              <Separator />
+              <Separator className="hidden sm:block" />
               {filteredUsers.map((user, i) => (
                 <div key={user.id}>
                   {i > 0 && <Separator />}
-                  <div className="grid grid-cols-12 gap-2 px-3 py-3 items-center hover:bg-accent/50 rounded-md transition-colors">
+
+                  {/* Mobile card layout */}
+                  <div className="sm:hidden px-3 py-3 hover:bg-accent/50 rounded-md transition-colors">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                          <p className="font-medium text-sm">{user.full_name || '—'}</p>
+                          {user.role === 'admin' && (
+                            <Badge className="text-xs bg-primary/20 text-primary border-primary/30">Admin</Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-1.5">{user.email}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {user.niche && (
+                            <Badge variant="secondary" className="text-xs">{user.niche}</Badge>
+                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {user.scripts_used}/10 guiones · {user.queries_used}/5 consultas
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground hover:text-primary" onClick={() => setViewLead(user)} title="Ver perfil">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        {isMaster && user.role !== 'master' && (
+                          <Button variant="ghost" size="icon"
+                            className={`w-8 h-8 ${user.role === 'admin' ? 'text-primary hover:text-muted-foreground' : 'text-muted-foreground hover:text-primary'}`}
+                            onClick={() => handleToggleRole(user)} disabled={roleLoading === user.id}
+                            title={user.role === 'admin' ? 'Quitar admin' : 'Hacer admin'}
+                          >
+                            {roleLoading === user.id ? <Loader2 className="w-4 h-4 animate-spin" /> : user.role === 'admin' ? <ShieldOff className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground hover:text-primary" onClick={() => handleResend(user)} disabled={resendLoading === user.id} title="Reenviar acceso">
+                          {resendLoading === user.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                        </Button>
+                        <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground hover:text-destructive" onClick={() => setDeleteConfirm(user)} disabled={deleteLoading === user.id} title="Eliminar usuario">
+                          {deleteLoading === user.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Desktop grid layout */}
+                  <div className="hidden sm:grid grid-cols-12 gap-2 px-3 py-3 items-center hover:bg-accent/50 rounded-md transition-colors">
                     <div className="col-span-4 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <p className="font-medium text-sm truncate">{user.full_name || '—'}</p>
@@ -275,52 +321,23 @@ export function Admin() {
                       </span>
                     </div>
                     <div className="col-span-4 flex justify-end gap-1">
-                      {/* Ver perfil */}
                       <Button variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground hover:text-primary" onClick={() => setViewLead(user)} title="Ver perfil">
                         <Eye className="w-3.5 h-3.5" />
                       </Button>
-                      {/* Toggle rol — solo master puede cambiar roles */}
                       {isMaster && user.role !== 'master' && (
-                        <Button
-                          variant="ghost" size="icon"
+                        <Button variant="ghost" size="icon"
                           className={`w-7 h-7 ${user.role === 'admin' ? 'text-primary hover:text-muted-foreground' : 'text-muted-foreground hover:text-primary'}`}
-                          onClick={() => handleToggleRole(user)}
-                          disabled={roleLoading === user.id}
+                          onClick={() => handleToggleRole(user)} disabled={roleLoading === user.id}
                           title={user.role === 'admin' ? 'Quitar admin' : 'Hacer admin'}
                         >
-                          {roleLoading === user.id
-                            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            : user.role === 'admin'
-                              ? <ShieldOff className="w-3.5 h-3.5" />
-                              : <Shield className="w-3.5 h-3.5" />
-                          }
+                          {roleLoading === user.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : user.role === 'admin' ? <ShieldOff className="w-3.5 h-3.5" /> : <Shield className="w-3.5 h-3.5" />}
                         </Button>
                       )}
-                      {/* Reenviar acceso */}
-                      <Button
-                        variant="ghost" size="icon"
-                        className="w-7 h-7 text-muted-foreground hover:text-primary"
-                        onClick={() => handleResend(user)}
-                        disabled={resendLoading === user.id}
-                        title="Reenviar acceso"
-                      >
-                        {resendLoading === user.id
-                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          : <Mail className="w-3.5 h-3.5" />
-                        }
+                      <Button variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground hover:text-primary" onClick={() => handleResend(user)} disabled={resendLoading === user.id} title="Reenviar acceso">
+                        {resendLoading === user.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
                       </Button>
-                      {/* Eliminar */}
-                      <Button
-                        variant="ghost" size="icon"
-                        className="w-7 h-7 text-muted-foreground hover:text-destructive"
-                        onClick={() => setDeleteConfirm(user)}
-                        disabled={deleteLoading === user.id}
-                        title="Eliminar usuario"
-                      >
-                        {deleteLoading === user.id
-                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          : <Trash2 className="w-3.5 h-3.5" />
-                        }
+                      <Button variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground hover:text-destructive" onClick={() => setDeleteConfirm(user)} disabled={deleteLoading === user.id} title="Eliminar usuario">
+                        {deleteLoading === user.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                       </Button>
                     </div>
                   </div>
@@ -405,7 +422,7 @@ export function Admin() {
           </DialogHeader>
           {viewLead && (
             <div className="space-y-3 text-sm">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div><p className="text-xs text-muted-foreground mb-0.5">Nombre</p><p className="font-medium">{viewLead.full_name || '—'}</p></div>
                 <div><p className="text-xs text-muted-foreground mb-0.5">Nicho</p><p className="font-medium">{viewLead.niche || '—'}</p></div>
                 <div><p className="text-xs text-muted-foreground mb-0.5">Genera al mes</p><p className="font-medium">{viewLead.monthly_revenue || '—'}</p></div>

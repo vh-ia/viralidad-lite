@@ -133,7 +133,7 @@ export function Scripts() {
   }
 
   return (
-    <div className="p-6 max-w-4xl">
+    <div className="p-4 sm:p-6 max-w-4xl">
       <div className="mb-6">
         <h1 className="text-2xl font-bold mb-1">Generador de Guiones</h1>
         <p className="text-muted-foreground text-sm">Crea guiones virales optimizados para cada plataforma</p>
@@ -262,7 +262,7 @@ export function Scripts() {
                 </div>
               </CardHeader>
               <CardContent>
-                <pre className="whitespace-pre-wrap text-sm text-foreground/90 leading-relaxed font-sans bg-background/50 rounded-md p-4 border border-border">
+                <pre className="whitespace-pre-wrap text-sm text-foreground/90 leading-relaxed font-sans bg-background/50 rounded-md p-4 border border-border overflow-x-auto">
                   {result}
                 </pre>
               </CardContent>
